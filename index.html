@@ -161,7 +161,7 @@ function classificar(item){
  return item;
 }
 function abrirGestao(){document.getElementById('cliente').classList.add('hidden');document.querySelector('.hero').classList.add('hidden');document.getElementById('loginArea').classList.remove('hidden');window.scrollTo(0,0)}
-function login(){if(document.getElementById('senha').value==='conecta4'){document.getElementById('loginArea').classList.add('hidden');document.getElementById('gestao').classList.remove('hidden');renderAdmin();}else alert('Senha incorreta. Para demonstração, use: conecta4');}
+function login(){if(document.getElementById('senha').value==='conecta4'){document.getElementById('loginArea').classList.add('hidden');document.getElementById('gestao').classList.remove('hidden');renderAdmin();iniciarSincronizacao();}else alert('Senha incorreta. Para demonstração, use: conecta4');}
 function sair(){document.getElementById('gestao').classList.add('hidden');document.getElementById('cliente').classList.remove('hidden');document.querySelector('.hero').classList.remove('hidden');window.scrollTo(0,0)}
 document.getElementById('form').addEventListener('submit',e=>{
  e.preventDefault();
@@ -180,6 +180,42 @@ document.getElementById('form').addEventListener('submit',e=>{
  resultado.classList.remove('hidden');resultado.innerHTML=`<b>✅ Pedido registrado.</b><br><span class="small">↗ Envio para a base Google Sheets disparado.</span><br>Protocolo: <b>${item.id}</b><br>Produto: ${item.produto}<br>Problema: ${item.problema}<br>Setor: ${item.setor}<br>Prioridade: <b>${item.prioridade}</b><br>Status: ${item.status}${item.duplicidade?'<br><br>⚠️ Possível duplicidade — encaminhar para validação humana.':''}`;
  e.target.reset();
 });
+
+async function sincronizarComPlanilha(){
+  try{
+    const resp = await fetch(GOOGLE_SHEETS_API + '?action=list&ts=' + Date.now(), {
+      method:'GET',
+      cache:'no-store'
+    });
+    const json = await resp.json();
+
+    if(json && json.ok && Array.isArray(json.dados)){
+      dados = json.dados.map(x => ({
+        ...x,
+        prazo: x.prazo === '' ? '' : Number(x.prazo),
+        duplicidade: String(x.duplicidade).toUpperCase() === 'SIM'
+      }));
+      localStorage.setItem(KEY, JSON.stringify(dados));
+      renderAdmin();
+      console.log('Dados sincronizados com Google Sheets:', dados.length);
+    }
+  }catch(err){
+    console.error('Não foi possível atualizar a Área da equipe:', err);
+  }
+}
+
+let sincronizacaoTimer = null;
+
+function iniciarSincronizacao(){
+  sincronizarComPlanilha();
+  clearInterval(sincronizacaoTimer);
+  sincronizacaoTimer = setInterval(() => {
+    if(!document.getElementById('gestao').classList.contains('hidden')){
+      sincronizarComPlanilha();
+    }
+  }, 3000);
+}
+
 function renderAdmin(){
  let fs=fStatus.value, fp=fProblema.value, fpr=fPrioridade.value, q=fBusca.value.toLowerCase();
  let filtered=dados.filter(x=>(!fs||x.status===fs)&&(!fpr||x.prioridade===fpr)&&(!q||`${x.produto} ${x.problema} ${x.mensagem}`.toLowerCase().includes(q)) &&
