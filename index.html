@@ -118,6 +118,7 @@ footer{max-width:1200px;margin:auto;padding:10px 18px 40px;color:#667085;font-si
    <h3>Exportação</h3>
    <p class="small">Baixe os dados em CSV para importar em planilha e conectar ao Power BI. Em uma implantação real, a fonte pode ser Google Sheets/SQL/CRM.</p>
    <button class="btn secondary" onclick="baixarCSV()">Baixar CSV para Power BI</button>
+   <button class="btn secondary" onclick="carregarDadosDemo()">Carregar 5 dados de demonstração</button>
    <button class="btn secondary" onclick="limparDemo()">Limpar dados da demonstração</button>
   </section>
  </main>
@@ -136,6 +137,12 @@ const demo=[
  {produto:'Mochila Executiva Conecta',problema:'Entrega atrasada',tipo:'Reclamação',mensagem:'Meu pedido está atrasado.',canal:'Telefone',nome:'Cliente 04',prazo:4},
  {produto:'Notebook Conecta Pro',problema:'Defeito',tipo:'Reclamação',mensagem:'O notebook chegou com defeito e preciso de troca.',canal:'Web',nome:'Cliente 05',prazo:8}
 ];
+function carregarDadosDemo(){
+  if(dados.length) return;
+  demo.forEach((x,i)=>{x.id='CM-'+String(i+1).padStart(4,'0');dados.push(classificar({...x}))});
+  localStorage.setItem(KEY,JSON.stringify(dados));
+  renderAdmin();
+}
 function classificar(item){
  let urgente=['Entrega atrasada','Não atendimento','Demora no atendimento','Senha / acesso'].includes(item.problema);
  let alta=['Defeito','Pagamento / cobrança','Troca','Garantia','Produto incompleto','Avaria'].includes(item.problema);
@@ -153,7 +160,6 @@ function classificar(item){
  item.observacao=item.observacao||'';
  return item;
 }
-function seed(){if(!dados.length){demo.forEach((x,i)=>{x.id='CM-'+String(i+1).padStart(4,'0');dados.push(classificar(x))});localStorage.setItem(KEY,JSON.stringify(dados));}}
 function abrirGestao(){document.getElementById('cliente').classList.add('hidden');document.querySelector('.hero').classList.add('hidden');document.getElementById('loginArea').classList.remove('hidden');window.scrollTo(0,0)}
 function login(){if(document.getElementById('senha').value==='conecta4'){document.getElementById('loginArea').classList.add('hidden');document.getElementById('gestao').classList.remove('hidden');renderAdmin();}else alert('Senha incorreta. Para demonstração, use: conecta4');}
 function sair(){document.getElementById('gestao').classList.add('hidden');document.getElementById('cliente').classList.remove('hidden');document.querySelector('.hero').classList.remove('hidden');window.scrollTo(0,0)}
@@ -213,7 +219,6 @@ function baixarCSV(){
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='conecta_mais_4_0_dados.csv';a.click();
 }
 function limparDemo(){if(confirm('Apagar os dados da demonstração?')){dados=[];localStorage.removeItem(KEY);renderAdmin()}}
-seed();
 </script>
 </body>
 </html>
